@@ -17,25 +17,25 @@ module VS_FSM (
     output reg [3:0] HEX_DATA,
     input  [7:0] DC_ASCII_DATA,
     // ROM
-    output reg [6:0] ADDR,
+    output reg [6:0] ADDR, // from var WIDTH = 7
     input  [7:0] DATA
     );
     
 reg [3:0] STATE; 
-reg [83:0] RES_REG;
-reg [4:0] RES_CT;
-reg [27:0] DATA_REG;
-reg [2:0] DATA_CT;
+reg [83:0] RES_REG; // from var RES WIDTH = 84
+reg [4:0] RES_CT; // RES WIDTH / 4 = 21 -> RES_CT WITDH = 5
+reg [27:0] DATA_REG; // from var input DATA WIDTH = 28
+reg [2:0] DATA_CT; // 2*N - 1 = 28/4 - 1 = 6
 
-reg [6:0] END_ADDR;
+reg [6:0] END_ADDR; // from var ADDR WIDTH = 7
 
 reg RES_FLG;
 
-reg [6:0] ERR_A0_MX;
-reg [6:0] ERR_A1_MX;
+reg [6:0] ERR_A0_MX; // from var ADDR WIDTH = 7
+reg [6:0] ERR_A1_MX; // from var ADDR WIDTH = 7
 
-wire [6:0] RES_A0;
-wire [6:0] RES_A1;
+wire [6:0] RES_A0;  // from var ADDR WIDTH = 7
+wire [6:0] RES_A1;  // from var ADDR WIDTH = 7
 
 localparam IDLE = 4'd0,
            RDT  = 4'd1,
@@ -47,7 +47,7 @@ localparam IDLE = 4'd0,
            TCR  = 4'd7,
            TLF  = 4'd8;
            
-assign DC_ASCII_DATA[7:0] = RX_DATA_R[7:0];
+assign ASCII_DATA[7:0] = RX_DATA_R[7:0];
 
 always @* begin
     case(RES_CT)
@@ -72,29 +72,30 @@ always @* begin
         18: HEX_DATA = RES_REG[11:8];
         19: HEX_DATA = RES_REG[7:4];
         20: HEX_DATA = RES_REG[3:0];
+        default: HEX_DATA = 0;
     endcase
 end
 
 assign RES_A0 = 0;
-assign RES_A1 = 7'h06;
+assign RES_A1 = 7'h07; // from var result msg
 
 always@*
     case(RX_DATA_R[9:8])
         2'b00: begin
-            ERR_A0_MX = 7'h07;
-            ERR_A1_MX = 7'h17;
+            ERR_A0_MX = 7'h08; // from 9
+            ERR_A1_MX = 7'h19; // to 26
         end
         2'b01: begin
-            ERR_A0_MX = 7'h18;
-            ERR_A1_MX = 7'h23;
+            ERR_A0_MX = 7'h1A; // from 27
+            ERR_A1_MX = 7'h2B; // to 44
         end
         2'b10: begin
-            ERR_A0_MX = 7'h24;
-            ERR_A1_MX = 7'h2F;
+            ERR_A0_MX = 7'h2C; // from 45
+            ERR_A1_MX = 7'h42; // to 67
         end
         2'b11: begin
-            ERR_A0_MX = 7'h25;
-            ERR_A1_MX = 7'h46;
+            ERR_A0_MX = 7'h43; // from 68 
+            ERR_A1_MX = 7'h4A; // to 75
         end
     endcase
 
@@ -104,12 +105,12 @@ always @(posedge CLK, posedge RST)
         STATE <= IDLE;
         TX_DATA_T <= 8'h00;
         TX_RDY_T <= 1'b0;
-        DATA_CT <= {3{1'b0}};    // var
-        RES_CT <= {5{1'b0}};     // var
-        RES_REG <= {84{1'b0}};   // var
-        DATA_REG <= {28{1'b0}};  // var
-        ADDR <= {7{1'b0}};
-        END_ADDR <= {7{1'b0}};
+        DATA_CT <= {3{1'b0}};    // from var
+        RES_CT <= {5{1'b0}};     // from var
+        RES_REG <= {84{1'b0}};   // from var
+        DATA_REG <= {28{1'b0}};  // from var
+        ADDR <= {7{1'b0}};       // from var
+        END_ADDR <= {7{1'b0}};   // from var
         RES_FLG <= 1'b0;
     end
     else
@@ -127,7 +128,7 @@ always @(posedge CLK, posedge RST)
                             STATE <= RDT;
                             ADDR <= RES_A0;
                             END_ADDR <= RES_A1;
-                            DATA_REG <= {DATA_REG[23:0], DC_HEX_DATA};
+                            DATA_REG <= {DATA_REG[23:0], DC_HEX_DATA}; // from var
                             DATA_CT <= DATA_CT + 1'b1;
                         end
                 end
@@ -142,11 +143,11 @@ always @(posedge CLK, posedge RST)
                     end
                     else
                         if (HEX_FLG) begin
-                            DATA_REG <= {DATA_REG[23:0], DC_HEX_DATA};
+                            DATA_REG <= {DATA_REG[23:0], DC_HEX_DATA};  // from var
                             DATA_CT <= DATA_CT + 1'b1;
-                            if (DATA_CT == 3'd6) begin // 28 / 4 = 7
+                            if (DATA_CT == 3'd6) begin // from var 28 / 4 = 7
                                 STATE <= RCR;
-                                DATA_CT <= {3{1'b0}};
+                                DATA_CT <= {3{1'b0}}; // from var
                             end
                         end
                 end
@@ -175,7 +176,7 @@ always @(posedge CLK, posedge RST)
                     else 
                         if (RX_DATA_R[7:0]==8'h0a) begin
                             STATE <= TRES;
-                            RES_REG <= RES_REG - DATA_REG;
+                            RES_REG <= RES_REG - DATA_REG; // from var sign = -
                             RES_FLG <= 1'b1;
                         end
                 end
@@ -211,10 +212,10 @@ always @(posedge CLK, posedge RST)
             
             TDT: begin
                 if (TX_RDY_R) begin
-                    if (RES_CT == 5'd21) begin // K = 21
+                    if (RES_CT == 5'd21) begin // from var K = 21
                         STATE <= TCR;
                         TX_DATA_T <= 8'h0D;
-                        RES_CT <= {5{1'b0}};
+                        RES_CT <= {5{1'b0}}; // from var
                     end
                     else begin
                         TX_DATA_T <= DC_ASCII_DATA;
@@ -236,6 +237,8 @@ always @(posedge CLK, posedge RST)
                     TX_RDY_T <= 1'b0;
                 end
             end
+            
+            default: STATE <= IDLE;
         endcase
 
 endmodule 

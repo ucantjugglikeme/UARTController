@@ -1,7 +1,7 @@
 module VS_ROM #(
     parameter WIDTH = 7
 )(
-    input [WIDTH-1:0] ADDR,
+    input [WIDTH-1:0] ADDR, // from var (depends on necessary mem width)
     output [7:0] DATA
 );
     

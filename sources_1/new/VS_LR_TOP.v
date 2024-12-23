@@ -21,7 +21,7 @@ wire TX_RDY_T;
 wire [7:0] TX_DATA_R;
 wire TX_RDY_R;
 
-wire [9:0] DATA_;
+wire [9:0] DATA_ERR;
 
 wire [7:0] ASCII_DATA;
 wire HEX_FLG;
@@ -30,8 +30,8 @@ wire [3:0] DC_HEX_DATA;
 wire [3:0] HEX_DATA;
 wire [7:0] DC_ASCII_DATA;
 
-wire [6:0] ADDR;
-wire [7:0] DATA;
+wire [6:0] ADDR; // from var ADDR WIDTH = 7
+wire [7:0] MEM_DATA;
 
 always @(posedge CLK, negedge SYS_NRST) begin
     if (~SYS_NRST)
@@ -83,35 +83,35 @@ VS_GENERR generr_inst(
     .RX_DATA_T(RX_DATA_T),
     .GEN_FRT_ERR(GEN_FRT_ERR),
     .GEN_PAR_ERR(GET_PAR_ERR),
-    .DATA(DATA_)
+    .DATA(DATA_ERR)
 );
 
 VS_FSM fms_inst(
     .CLK(CLK),
     .RST(RST),
     .RX_DATA_EN(RX_DATA_EN),
-    .RX_DATA_R(DATA_),
-    .TX_RDY_T(TX_RDY_R),
+    .RX_DATA_R(DATA_ERR),
+    .TX_RDY_T(TX_RDY_T),
     .TX_DATA_T(TX_DATA_R),
-    .TX_RDY_R(TX_RDY_T),
+    .TX_RDY_R(TX_RDY_R),
     .ASCII_DATA(ASCII_DATA),
     .HEX_FLG(HEX_FLG),
     .DC_HEX_DATA(DC_HEX_DATA),
     .HEX_DATA(HEX_DATA),
     .DC_ASCII_DATA(DC_ASCII_DATA),
     .ADDR(ADDR),
-    .DATA(DATA)
+    .DATA(MEM_DATA)
 );
 
 VS_ROM rom_inst(
     .ADDR(ADDR),
-    .DATA(DATA)
+    .DATA(MEM_DATA)
 );
 
 VS_DC_ASCII_HEX dc_inst(
     .ASCII(ASCII_DATA),
-    .HEX(HEX_FLG),
-    .HEX_FLG(DC_HEX_DATA)
+    .HEX(DC_HEX_DATA),
+    .HEX_FLG(HEX_FLG)
 );
 VS_DC_HEX_ASCII dc_hex_ascii_inst(
     .HEX(HEX_DATA),
